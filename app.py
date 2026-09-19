@@ -1,9 +1,10 @@
 import streamlit as st
 import os
+import requests
 
 from dotenv import load_dotenv
 
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
+# from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -106,15 +107,44 @@ if st.button("Load Video"):
                 # Step 1 - Fetch Transcript
                 # --------------------------------------------------
 
-                api = YouTubeTranscriptApi()
+                # api = YouTubeTranscriptApi()
 
-                transcript_list = api.fetch(
-                    video_id,
-                    languages=["en"]
+                # transcript_list = api.fetch(
+                #     video_id,
+                #     languages=["en"]
+                # )
+
+                # transcript = " ".join(
+                #     chunk.text for chunk in transcript_list
+                # )
+
+                TRANSCRIPT_API_KEY = os.getenv("TRANSCRIPT_API_KEY")
+
+                url = "https://transcriptapi.com/api/v2/youtube/transcript"
+
+                headers = {
+                    "Authorization": f"Bearer {TRANSCRIPT_API_KEY}"
+                }
+
+                params = {
+                    "video_url": video_id,
+                    "format": "json",
+                    "include_timestamp": False
+                }
+
+                response = requests.get(
+                    url,
+                    headers=headers,
+                    params=params
                 )
 
+                response.raise_for_status()
+
+                data = response.json()
+
                 transcript = " ".join(
-                    chunk.text for chunk in transcript_list
+                    segment["text"]
+                    for segment in data["transcript"]
                 )
 
 
@@ -256,11 +286,11 @@ Question:
                 )
 
 
-            except TranscriptsDisabled:
+                # except TranscriptsDisabled:
 
-                st.error(
-                    "Captions are disabled for this video."
-                )
+                #     st.error(
+                #         "Captions are disabled for this video."
+                #     )
 
             except Exception as e:
 
